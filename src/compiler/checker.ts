@@ -93,7 +93,7 @@ module ts {
         let emptyObjectType = createAnonymousType(undefined, emptySymbols, emptyArray, emptyArray, undefined, undefined);
         let anyFunctionType = createAnonymousType(undefined, emptySymbols, emptyArray, emptyArray, undefined, undefined);
         let noConstraintType = createAnonymousType(undefined, emptySymbols, emptyArray, emptyArray, undefined, undefined);
-        
+
         let anySignature = createSignature(undefined, undefined, emptyArray, anyType, 0, false, false);
         let unknownSignature = createSignature(undefined, undefined, emptyArray, unknownType, 0, false, false);
 
@@ -118,7 +118,7 @@ module ts {
         let getGlobalParameterDecoratorType: () => ObjectType;
         let getGlobalPropertyDecoratorType: () => ObjectType;
         let getGlobalMethodDecoratorType: () => ObjectType;
-        
+
         let tupleTypes: Map<TupleType> = {};
         let unionTypes: Map<UnionType> = {};
         let stringLiteralTypes: Map<StringLiteralType> = {};
@@ -444,7 +444,7 @@ module ts {
                         }
                         break;
                     case SyntaxKind.Decorator:
-                        // Decorators are resolved at the class declaration. Resolving at the parameter 
+                        // Decorators are resolved at the class declaration. Resolving at the parameter
                         // or member would result in looking up locals in the method.
                         //
                         //   function y() {}
@@ -1949,7 +1949,7 @@ module ts {
                     case SyntaxKind.ParenthesizedType:
                         return isDeclarationVisible(<Declaration>node.parent);
 
-                    // Default binding, import specifier and namespace import is visible 
+                    // Default binding, import specifier and namespace import is visible
                     // only on demand so by default it is not visible
                     case SyntaxKind.ImportClause:
                     case SyntaxKind.NamespaceImport:
@@ -6030,7 +6030,7 @@ module ts {
                     // c is represented in the tree as a spread element in an array literal.
                     // But c really functions as a rest element, and its purpose is to provide
                     // a contextual type for the right hand side of the assignment. Therefore,
-                    // instead of calling checkExpression on "...c", which will give an error 
+                    // instead of calling checkExpression on "...c", which will give an error
                     // if c is not iterable/array-like, we need to act as if we are trying to
                     // get the contextual element type from it. So we do something similar to
                     // getContextualTypeForElementExpression, which will crucially not error
@@ -6038,7 +6038,7 @@ module ts {
                     let restArrayType = checkExpression((<SpreadElementExpression>e).expression, contextualMapper);
                     let restElementType = getIndexTypeOfType(restArrayType, IndexKind.Number) ||
                         (languageVersion >= ScriptTarget.ES6 ? checkIteratedType(restArrayType, /*expressionForError*/ undefined) : undefined);
-                    
+
                     if (restElementType) {
                         elementTypes.push(restElementType);
                     }
@@ -6939,7 +6939,7 @@ module ts {
                     if (!hasCorrectArity(node, args, originalCandidate)) {
                         continue;
                     }
-                    
+
                     let candidate: Signature;
                     let typeArgumentsAreValid: boolean;
                     let inferenceContext = originalCandidate.typeParameters
@@ -8137,7 +8137,7 @@ module ts {
             if (node.questionToken && isBindingPattern(node.name) && func.body) {
                 error(node, Diagnostics.A_binding_pattern_parameter_cannot_be_optional_in_an_implementation_signature);
             }
-            
+
             // Only check rest parameter type if it's not a binding pattern. Since binding patterns are
             // not allowed in a rest parameter, we already have an error from checkGrammarParameterList.
             if (node.dotDotDotToken && !isBindingPattern(node.name) && !isArrayType(getTypeOfSymbol(node.symbol))) {
@@ -8806,7 +8806,7 @@ module ts {
         /** Checks a type reference node as an expression. */
         function checkTypeNodeAsExpression(node: TypeNode) {
             // When we are emitting type metadata for decorators, we need to try to check the type
-            // as if it were an expression so that we can emit the type in a value position when we 
+            // as if it were an expression so that we can emit the type in a value position when we
             // serialize the type metadata.
             if (node && node.kind === SyntaxKind.TypeReference) {
                 let type = getTypeFromTypeNode(node);
@@ -8821,7 +8821,7 @@ module ts {
         }
 
         /**
-          * Checks the type annotation of an accessor declaration or property declaration as 
+          * Checks the type annotation of an accessor declaration or property declaration as
           * an expression if it is a type reference to a type with a value declaration.
           */
         function checkTypeAnnotationAsExpression(node: AccessorDeclaration | PropertyDeclaration | ParameterDeclaration | MethodDeclaration) {
@@ -8843,7 +8843,7 @@ module ts {
                     break;
             }
         }
-        
+
         /** Checks the type annotation of the parameters of a function/method or the constructor of a class as expressions */
         function checkParameterTypeAnnotationsAsExpressions(node: FunctionLikeDeclaration) {
             // ensure all type annotations with a value declaration are checked as an expression
@@ -9456,7 +9456,7 @@ module ts {
             if (allowStringInput) {
                 return checkElementTypeOfArrayOrString(inputType, errorNode);
             }
-            
+
             if (isArrayLikeType(inputType)) {
                 let indexType = getIndexTypeOfType(inputType, IndexKind.Number);
                 if (indexType) {
@@ -10493,9 +10493,9 @@ module ts {
                         }
                     }
 
-                    // if the module merges with a class declaration in the same lexical scope, 
+                    // if the module merges with a class declaration in the same lexical scope,
                     // we need to track this to ensure the correct emit.
-                    let mergedClass = getDeclarationOfKind(symbol, SyntaxKind.ClassDeclaration);                    
+                    let mergedClass = getDeclarationOfKind(symbol, SyntaxKind.ClassDeclaration);
                     if (mergedClass &&
                         inSameLexicalScope(node, mergedClass)) {
                         getNodeLinks(node).flags |= NodeCheckFlags.LexicalModuleMergesWithClass;
@@ -11532,7 +11532,7 @@ module ts {
         }
 
         function getExpressionNameSubstitution(node: Identifier, getGeneratedNameForNode: (Node: Node) => string): string {
-            let symbol = getNodeLinks(node).resolvedSymbol || (isDeclarationName(node) ? getSymbolOfNode(node.parent) : undefined);
+            let symbol = getResolvedSymbol(node) || (isDeclarationName(node) ? getSymbolOfNode(node.parent) : undefined);
             if (symbol) {
                 // Whan an identifier resolves to a parented symbol, it references an exported entity from
                 // another declaration of the same internal module.
@@ -11674,6 +11674,23 @@ module ts {
             }
         }
 
+        /** Serializes an Entity. Used by the __metadata decorator. */
+        function serializeEntity(node: TypeReferenceNode, getGeneratedNameForNode: (Node: Node) => string): string {
+            var text = "{kind: " + serializeEntityName(node.typeName, getGeneratedNameForNode);
+            if (node.typeArguments) {
+                text += ', typeArguments: [';
+                node.typeArguments.forEach(function(node, i) {
+                    if (i) {
+                        text += ', ';
+                    }
+                    text += serializeEntityName((<TypeReferenceNode>node).typeName, getGeneratedNameForNode);
+                });
+                text += ']';
+            }
+            text += '}';
+            return text;
+        }
+
         /** Serializes a TypeReferenceNode to an appropriate JS constructor value. Used by the __metadata decorator. */
         function serializeTypeReferenceNode(node: TypeReferenceNode, getGeneratedNameForNode: (Node: Node) => string): string | string[] {
             // serialization of a TypeReferenceNode uses the following rules:
@@ -11712,7 +11729,12 @@ module ts {
                 return fallbackPath;
             }
             else if (type.symbol && type.symbol.valueDeclaration) {
-                return serializeEntityName(node.typeName, getGeneratedNameForNode);
+                if (compilerOptions.emitVerboseMetadata) {
+                    return serializeEntity(node, getGeneratedNameForNode);
+                }
+                else {
+                    return serializeEntityName(node.typeName, getGeneratedNameForNode);
+                }
             }
             else if (typeHasCallOrConstructSignatures(type)) {
                 return "Function";
@@ -11764,7 +11786,7 @@ module ts {
                         break;
                 }
             }
-             
+
             return "Object";
         }
 
@@ -11778,7 +11800,7 @@ module ts {
             // * The serialized type of an AccessorDeclaration is the serialized type of the return type annotation of its getter or parameter type annotation of its setter.
             // * The serialized type of any other FunctionLikeDeclaration is "Function".
             // * The serialized type of any other node is "void 0".
-            // 
+            //
             // For rules on serializing type annotations, see `serializeTypeNode`.
             switch (node.kind) {
                 case SyntaxKind.ClassDeclaration:       return "Function";
@@ -11792,14 +11814,27 @@ module ts {
             }
             return "void 0";
         }
-        
+
+        /** Serializes the module of a declaration to a strong value. Used by the __metadata decorator for a class member. */
+        function serializeModuleOfNode(node: Node, getGeneratedNameForNode: (Node: Node) => string): string | string[] {
+            var moduleDeclaration = <ModuleDeclaration>node.parent.parent;
+            var text = moduleDeclaration.name.text;
+            if (moduleDeclaration.parent && moduleDeclaration.parent.kind === SyntaxKind.ModuleBlock) {
+                text += '.' + serializeModuleOfNode(moduleDeclaration, getGeneratedNameForNode);
+            }
+            if (moduleDeclaration.parent && moduleDeclaration.parent.kind === SyntaxKind.ModuleDeclaration) {
+                text += '.' + serializeModuleOfNode(node.parent, getGeneratedNameForNode);
+            }
+            return text;
+        }
+
         /** Serializes the parameter types of a function or the constructor of a class. Used by the __metadata decorator for a method or set accessor. */
         function serializeParameterTypesOfNode(node: Node, getGeneratedNameForNode: (Node: Node) => string): (string | string[])[] {
             // serialization of parameter types uses the following rules:
             //
             // * If the declaration is a class, the parameters of the first constructor with a body are used.
             // * If the declaration is function-like and has a body, the parameters of the function are used.
-            // 
+            //
             // For the rules on serializing the type of each parameter declaration, see `serializeTypeOfDeclaration`.
             if (node) {
                 var valueDeclaration: FunctionLikeDeclaration;
@@ -11892,7 +11927,7 @@ module ts {
             let isVariableDeclarationOrBindingElement =
                 n.parent.kind === SyntaxKind.BindingElement || (n.parent.kind === SyntaxKind.VariableDeclaration && (<VariableDeclaration>n.parent).name === n);
 
-            let symbol = 
+            let symbol =
                 (isVariableDeclarationOrBindingElement ? getSymbolOfNode(n.parent) : undefined) ||
                 getNodeLinks(n).resolvedSymbol ||
                 resolveName(n, n.text, SymbolFlags.Value | SymbolFlags.Alias, /*nodeNotFoundMessage*/ undefined, /*nameArg*/ undefined);
@@ -11920,7 +11955,7 @@ module ts {
             if (!signature) {
                 return unknownType;
             }
-            
+
             let instantiatedSignature = getSignatureInstantiation(signature, typeArguments);
             return getOrCreateTypeFromSignature(instantiatedSignature);
         }
@@ -11945,9 +11980,10 @@ module ts {
                 collectLinkedAliases,
                 getBlockScopedVariableId,
                 getReferencedValueDeclaration,
+                serializeModuleOfNode,
                 serializeTypeOfNode,
                 serializeParameterTypesOfNode,
-                serializeReturnTypeOfNode,
+                serializeReturnTypeOfNode
             };
         }
 

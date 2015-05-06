@@ -1115,6 +1115,8 @@ declare module ts {
         watch?: boolean;
         separateCompilation?: boolean;
         emitDecoratorMetadata?: boolean;
+        emitVerboseMetadata?: boolean;
+        skipEmitVarForModule?: boolean;
         [option: string]: string | number | boolean;
     }
     const enum ModuleKind {

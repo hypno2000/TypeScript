@@ -192,6 +192,16 @@ module ts {
             name: "emitDecoratorMetadata",
             type: "boolean",
             experimental: true
+        },
+        {
+            name: "emitVerboseMetadata",
+            type: "boolean",
+            experimental: true
+        },
+        {
+            name: "skipEmitVarForModule",
+            type: "boolean",
+            experimental: true
         }
     ];
 
@@ -336,7 +346,7 @@ module ts {
       * Parse the contents of a config file (tsconfig.json).
       * @param json The contents of the config file to parse
       * @param basePath A root directory to resolve relative path entries in the config
-      *    file to. e.g. outDir 
+      *    file to. e.g. outDir
       */
     export function parseConfigFile(json: any, host: ParseConfigHost, basePath: string): ParsedCommandLine {
         var errors: Diagnostic[] = [];
