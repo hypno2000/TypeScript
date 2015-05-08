@@ -11563,7 +11563,7 @@ module ts {
         }
 
         function getExpressionNameSubstitution(node: Identifier, getGeneratedNameForNode: (Node: Node) => string): string {
-            let symbol = getResolvedSymbol(node) || (isDeclarationName(node) ? getSymbolOfNode(node.parent) : undefined);
+            let symbol = getNodeLinks(node).resolvedSymbol || (isDeclarationName(node) ? getSymbolOfNode(node.parent) : undefined);
             if (symbol) {
                 // Whan an identifier resolves to a parented symbol, it references an exported entity from
                 // another declaration of the same internal module.
@@ -11687,6 +11687,7 @@ module ts {
         /** Serializes an EntityName (with substitutions) to an appropriate JS constructor value. Used by the __metadata decorator. */
         function serializeEntityName(node: EntityName, getGeneratedNameForNode: (Node: Node) => string, fallbackPath?: string[]): string {
             if (node.kind === SyntaxKind.Identifier) {
+                getResolvedSymbol(<Identifier>node);
                 var substitution = getExpressionNameSubstitution(<Identifier>node, getGeneratedNameForNode);
                 var text = substitution || (<Identifier>node).text;
                 if (fallbackPath) {
@@ -11706,15 +11707,15 @@ module ts {
         }
 
         /** Serializes an Entity. Used by the __metadata decorator. */
-        function serializeEntity(node: TypeReferenceNode, getGeneratedNameForNode: (Node: Node) => string): string {
-            var text = "{kind: " + serializeEntityName(node.typeName, getGeneratedNameForNode);
+        function serializeEntityFull(node: TypeReferenceNode, getGeneratedNameForNode: (Node: Node) => string): string {
+            var text = "{kind: '" + serializeEntityName(node.typeName, getGeneratedNameForNode) + "'";
             if (node.typeArguments) {
                 text += ', typeArguments: [';
                 node.typeArguments.forEach(function(node, i) {
                     if (i) {
                         text += ', ';
                     }
-                    text += serializeEntityName((<TypeReferenceNode>node).typeName, getGeneratedNameForNode);
+                    text += serializeTypeNode(node, getGeneratedNameForNode);
                 });
                 text += ']';
             }
@@ -11743,7 +11744,12 @@ module ts {
                 return "Boolean";
             }
             else if (type.flags & TypeFlags.NumberLike) {
-                return "Number";
+                if (compilerOptions.emitVerboseMetadata && type.flags & TypeFlags.Enum) {
+                   return 'function Enum(){return ' + serializeEntityName(node.typeName, getGeneratedNameForNode) + '}';
+                }
+                else {
+                    return "Number";
+                }
             }
             else if (type.flags & TypeFlags.StringLike) {
                 return "String";
@@ -11761,7 +11767,7 @@ module ts {
             }
             else if (type.symbol && type.symbol.valueDeclaration) {
                 if (compilerOptions.emitVerboseMetadata) {
-                    return serializeEntity(node, getGeneratedNameForNode);
+                    return serializeEntityFull(node, getGeneratedNameForNode);
                 }
                 else {
                     return serializeEntityName(node.typeName, getGeneratedNameForNode);
