@@ -803,9 +803,7 @@ module ts {
 
             let symbol: Symbol;
             if (name.kind === SyntaxKind.Identifier) {
-                let message = meaning === SymbolFlags.Namespace ? Diagnostics.Cannot_find_namespace_0 : Diagnostics.Cannot_find_name_0;
-
-                symbol = resolveName(name, (<Identifier>name).text, meaning, message, <Identifier>name);
+                symbol = resolveName(name, (<Identifier>name).text, meaning, Diagnostics.Cannot_find_name_0, <Identifier>name);
                 if (!symbol) {
                     return undefined;
                 }
@@ -857,11 +855,10 @@ module ts {
                     return symbol;
                 }
             }
-            let fileName: string;
             let sourceFile: SourceFile;
             while (true) {
-                fileName = normalizePath(combinePaths(searchPath, moduleName));
-                sourceFile = forEach(supportedExtensions, extension => host.getSourceFile(fileName + extension));
+                let fileName = normalizePath(combinePaths(searchPath, moduleName));
+                sourceFile = host.getSourceFile(fileName + ".ts") || host.getSourceFile(fileName + ".d.ts");
                 if (sourceFile || isRelative) {
                     break;
                 }
@@ -5385,43 +5382,20 @@ module ts {
                 if (!isTypeSubtypeOf(rightType, globalFunctionType)) {
                     return type;
                 }
-
-                let targetType: Type;
+                // Target type is type of prototype property
                 let prototypeProperty = getPropertyOfType(rightType, "prototype");
-                if (prototypeProperty) {
-                    // Target type is type of the protoype property
-                    let prototypePropertyType = getTypeOfSymbol(prototypeProperty);
-                    if (prototypePropertyType !== anyType) {
-                        targetType = prototypePropertyType;
-                    }
+                if (!prototypeProperty) {
+                    return type;
                 }
-
-                if (!targetType) {
-                    // Target type is type of construct signature
-                    let constructSignatures: Signature[];
-                    if (rightType.flags & TypeFlags.Interface) {
-                        constructSignatures = resolveDeclaredMembers(<InterfaceType>rightType).declaredConstructSignatures;
-                    }
-                    else if (rightType.flags & TypeFlags.Anonymous) {
-                        constructSignatures = getSignaturesOfType(rightType, SignatureKind.Construct);
-                    }
-
-                    if (constructSignatures && constructSignatures.length) {
-                        targetType = getUnionType(map(constructSignatures, signature => getReturnTypeOfSignature(getErasedSignature(signature))));
-                    }
+                let targetType = getTypeOfSymbol(prototypeProperty);
+                // Narrow to target type if it is a subtype of current type
+                if (isTypeSubtypeOf(targetType, type)) {
+                    return targetType;
                 }
-
-                if (targetType) {
-                    // Narrow to the target type if it's a subtype of the current type
-                    if (isTypeSubtypeOf(targetType, type)) {
-                        return targetType;
-                    }
-                    // If the current type is a union type, remove all constituents that aren't subtypes of the target.
-                    if (type.flags & TypeFlags.Union) {
-                        return getUnionType(filter((<UnionType>type).types, t => isTypeSubtypeOf(t, targetType)));
-                    }
+                // If current type is a union type, remove all constituents that aren't subtypes of target type
+                if (type.flags & TypeFlags.Union) {
+                    return getUnionType(filter((<UnionType>type).types, t => isTypeSubtypeOf(t, targetType)));
                 }
-
                 return type;
             }
 
@@ -11733,17 +11707,24 @@ module ts {
         }
 
         /** Serializes an Entity. Used by the __metadata decorator. */
-        function serializeEntityFull(node: TypeReferenceNode, getGeneratedNameForNode: (Node: Node) => string): string {
-            var text = "{kind: '" + serializeEntityName(node.typeName, getGeneratedNameForNode) + "'";
-            if (node.typeArguments) {
-                text += ', typeArguments: [';
-                node.typeArguments.forEach(function(node, i) {
-                    if (i) {
-                        text += ', ';
-                    }
-                    text += serializeTypeNode(node, getGeneratedNameForNode);
-                });
-                text += ']';
+        function serializeEntityFull(node: any, getGeneratedNameForNode: (Node: Node) => string): string {
+            var text: string;
+            if (node.kind === SyntaxKind.ArrayType) {
+                text = "{kind: 'Array'";
+                text += ", elementType: " +  serializeTypeNode(node.elementType, getGeneratedNameForNode);
+            }
+            else {
+                text = "{kind: '" + serializeEntityName(node.typeName, getGeneratedNameForNode) + "'";
+                if (node.typeArguments) {
+                    text += ', typeArguments: [';
+                    node.typeArguments.forEach(function(node: any, i: any) {
+                        if (i) {
+                            text += ', ';
+                        }
+                        text += serializeTypeNode(node, getGeneratedNameForNode);
+                    });
+                    text += ']';
+                }
             }
             text += '}';
             return text;
@@ -11829,7 +11810,12 @@ module ts {
                         return "Function";
                     case SyntaxKind.ArrayType:
                     case SyntaxKind.TupleType:
-                        return "Array";
+                        if (compilerOptions.emitVerboseMetadata) {
+                            return serializeTypeReferenceNode(<TypeReferenceNode>node, getGeneratedNameForNode);
+                        }
+                        else {
+                            return "Array";
+                        }
                     case SyntaxKind.BooleanKeyword:
                         return "Boolean";
                     case SyntaxKind.StringKeyword:
@@ -11883,10 +11869,10 @@ module ts {
             var moduleDeclaration = <ModuleDeclaration>node.parent.parent;
             var text = moduleDeclaration.name.text;
             if (moduleDeclaration.parent && moduleDeclaration.parent.kind === SyntaxKind.ModuleBlock) {
-                text += '.' + serializeModuleOfNode(moduleDeclaration, getGeneratedNameForNode);
+                text = '.' + serializeModuleOfNode(moduleDeclaration, getGeneratedNameForNode);
             }
             if (moduleDeclaration.parent && moduleDeclaration.parent.kind === SyntaxKind.ModuleDeclaration) {
-                text += '.' + serializeModuleOfNode(node.parent, getGeneratedNameForNode);
+                text = serializeModuleOfNode(node.parent, getGeneratedNameForNode) + '.' + text;
             }
             return text;
         }

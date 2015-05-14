@@ -3,6 +3,23 @@
 
 /* @internal */
 module ts {
+
+    //function __stack() {
+    //    var orig = (<any>Error).prepareStackTrace;
+    //    (<any>Error).prepareStackTrace = function (_: any, stack: any) {
+    //        return stack;
+    //    };
+    //    var err = new Error;
+    //    (<any>Error).captureStackTrace(err, arguments.callee);
+    //    var stack = (<any>err).stack;
+    //    (<any>Error).prepareStackTrace = orig;
+    //    return stack;
+    //}
+	 //
+    //function __line() {
+    //    return __stack()[1].getLineNumber();
+    //}
+
     export function isExternalModuleOrDeclarationFile(sourceFile: SourceFile) {
         return isExternalModule(sourceFile) || isDeclarationFile(sourceFile);
     }
@@ -3899,7 +3916,7 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
                 scopeEmitEnd();
 
                 // TODO(rbuckton): Need to go back to `let _a = class C {}` approach, removing the defineProperty call for now.
-                 
+
                 // For a decorated class, we need to assign its name (if it has one). This is because we emit
                 // the class as a class expression to avoid the double-binding of the identifier:
                 //
