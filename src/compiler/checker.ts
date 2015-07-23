@@ -11687,7 +11687,7 @@ module ts {
         /** Serializes an EntityName (with substitutions) to an appropriate JS constructor value. Used by the __metadata decorator. */
         function serializeEntityName(node: EntityName, getGeneratedNameForNode: (Node: Node) => string, fallbackPath?: string[]): string {
             if (node.kind === SyntaxKind.Identifier) {
-                getResolvedSymbol(<Identifier>node);
+                //getResolvedSymbol(<Identifier>node);
                 var substitution = getExpressionNameSubstitution(<Identifier>node, getGeneratedNameForNode);
                 var text = substitution || (<Identifier>node).text;
                 if (fallbackPath) {
